@@ -1,0 +1,892 @@
+:root {
+    --bg-color: oklch(0.99 0.01 100);
+    --header-color: oklch(0.3 0.1 150);
+    --text-color: oklch(0.15 0 0);
+    --rule-color: oklch(0.85 0.05 150);
+    /* Dark enough to carry text: this is the link-hover colour, and the old
+       0.65 gave 3.37:1, so hovering a link made it *less* readable than at
+       rest. 0.56 is 4.86:1, which clears AA for body text. */
+    --accent-orange: oklch(0.56 0.18 45);
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    /* One typeface across the whole site. --font-serif keeps its name so the
+       rules below need no edit: set it back to 'Newsreader', serif (and restore
+       the preload in base.html) to bring the two-font pairing back. */
+    --font-sans: 'Libre Franklin', sans-serif;
+    --font-serif: 'Libre Franklin', sans-serif;
+    /* Both derived from the text colour, so they stay visible in both themes. */
+    --hairline: color-mix(in srgb, var(--text-color) 12%, transparent);
+    --text-muted: color-mix(in srgb, var(--text-color) 72%, var(--bg-color));
+}
+
+/* No font-size here on purpose. Pinning it to 16px overrides the reader's own
+   browser default, which is the one accessibility setting people actually
+   change. Every size below is rem, so they all scale with it. */
+html {
+    scroll-behavior: smooth;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --bg-color: oklch(0.16 0.01 150);
+        --header-color: oklch(0.8 0.1 140);
+        --text-color: oklch(0.95 0 0);
+        --rule-color: oklch(0.3 0.05 150);
+        --accent-orange: oklch(0.75 0.18 45);
+    }
+}
+
+:root[data-theme="dark"] {
+    --bg-color: oklch(0.16 0.01 150);
+    --header-color: oklch(0.8 0.1 140);
+    --text-color: oklch(0.95 0 0);
+    --rule-color: oklch(0.3 0.05 150);
+    --accent-orange: oklch(0.75 0.18 45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --ease: linear;
+    }
+    /* Transitions and keyframes both. The hero entrance is inside a
+       no-preference query, so it never starts; this catches the rest. */
+    * {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+    html {
+        scroll-behavior: auto;
+    }
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: var(--font-sans);
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* The first thing a keyboard reader ever reaches, so it takes the pairing with
+   the most contrast in both themes. White on orange was 2.46:1 in dark mode. */
+.skip-link {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: var(--header-color);
+    color: var(--bg-color);
+    padding: 8px 16px;
+    z-index: 200;
+    /* Translate rather than a negative top: a fixed offset let the
+       bar show through at the top of the page. */
+    transform: translateY(-200%);
+    transition: transform 0.15s var(--ease);
+}
+.skip-link:focus {
+    transform: translateY(0);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif);
+    color: var(--header-color);
+    margin-top: 0;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+}
+
+h1 {
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    line-height: 1.1;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+}
+
+h2 {
+    font-size: 1.5rem;
+    line-height: 1.2;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+    transition: opacity 0.15s var(--ease), color 0.15s var(--ease);
+}
+
+a:hover, a:focus-visible {
+    opacity: 1;
+    color: var(--accent-orange);
+}
+
+a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent-orange);
+    outline-offset: 4px;
+    border-radius: 4px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: max(4rem, env(safe-area-inset-top)) max(2rem, env(safe-area-inset-right)) max(4rem, env(safe-area-inset-bottom)) max(2rem, env(safe-area-inset-left));
+}
+
+/* Top Nav */
+.site-header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding-bottom: 1rem;
+    gap: 1.25rem;
+    position: sticky;
+    top: -1px;
+    z-index: 100;
+    /* Opaque, not blurred. At 96% the frosting was barely visible, but a
+       full-width backdrop-filter re-blurs the whole bar on every scroll frame,
+       which is the most expensive thing on the page for a mid-range phone. */
+    background-color: var(--bg-color);
+    padding-top: 1.5rem;
+    margin-top: -1.5rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--text-color) 10%, transparent);
+}
+
+@media (max-width: 768px) {
+    .site-header {
+        gap: 1.5rem;
+    }
+}
+
+/* Name and the utility icons share one baseline row; the role line sits under it. */
+.brand-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    width: 100%;
+}
+
+.brand-name {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+}
+.brand-name a:hover, .brand-name a:focus-visible { color: var(--header-color); }
+
+.brand-role {
+    margin: 0.125rem 0 0;
+    font-size: 0.875rem;
+    opacity: 0.8;
+}
+
+.utility {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+.utility a, .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    opacity: 0.7;
+    transition: opacity 0.15s var(--ease), color 0.15s var(--ease);
+}
+.utility a:hover, .utility a:focus-visible,
+.theme-toggle:hover, .theme-toggle:focus-visible { opacity: 1; color: var(--header-color); }
+
+.sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+nav {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+}
+nav::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 1rem;
+    font-size: 1rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+nav a {
+    display: inline-block;
+    padding: 12px 8px;
+}
+
+nav li:first-child a {
+    padding-left: 0;
+}
+
+.theme-toggle {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 0;
+}
+
+nav a[aria-current="page"] {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+
+/* Hero Section */
+.hero {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 2rem;
+    padding: 4rem 0;
+    align-items: center;
+}
+
+.hero-text {
+    grid-column: 1 / 9;
+}
+
+/* Four columns rather than three: the photo is near-square, not the 3:4 the
+   old crop forced, so it needs the extra width to hold the headline's weight. */
+.hero-image {
+    grid-column: 9 / 13;
+}
+
+@media (max-width: 768px) {
+    .hero {
+        grid-template-columns: 1fr;
+        padding: 3rem 0;
+    }
+    .hero-text, .hero-image {
+        grid-column: 1 / -1;
+    }
+}
+
+.hero-text h1 {
+    font-size: clamp(2.5rem, 4vw, 4rem);
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+    text-wrap: balance;
+    letter-spacing: -0.02em;
+}
+
+.standfirst {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 1.25rem;
+    line-height: 1.5;
+    opacity: 0.9;
+    max-width: 46ch;
+}
+
+.hero-text p.standfirst {
+    font-size: clamp(1.25rem, 2vw, 1.5rem);
+    max-width: 38ch;
+}
+
+/* No aspect-ratio and no object-fit on purpose: the photo shows at its own
+   670x687 proportions, uncropped. height:auto lets the intrinsic ratio from
+   the width/height attributes govern, which also reserves the box. */
+.headshot {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* The one authored entrance: the headline and the portrait reveal
+   left to right. It runs once, on the home page only. */
+@media (prefers-reduced-motion: no-preference) {
+    .hero-text h1 {
+        mask-image: linear-gradient(to right, #000 0 18%, transparent 55%);
+        mask-size: 480% 100%;
+        animation: develop 800ms var(--ease) both;
+    }
+    .headshot {
+        clip-path: inset(0 0 0 0);
+        animation: uncover 800ms var(--ease) 120ms both;
+    }
+    .hero-text p.standfirst {
+        animation: settle 500ms var(--ease) 420ms both;
+    }
+}
+
+@keyframes develop {
+    from { mask-position: 100% 0; }
+    to   { mask-position: 0 0; }
+}
+
+@keyframes uncover {
+    from { clip-path: inset(0 100% 0 0); }
+    to   { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes settle {
+    from { opacity: 0; }
+    to   { opacity: 0.9; }
+}
+
+/* Grid Layout */
+.section-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 2rem;
+    border-top: 3px solid var(--rule-color);
+    padding: 3rem 0;
+}
+
+.section-label {
+    grid-column: 1 / 4;
+    position: sticky;
+    /* Clears the sticky header, which is about 7.4rem tall. A grid item
+       stretches to the row height by default, which leaves sticky nothing
+       to travel through: align-self shrinks the box back to its content. */
+    top: 8.5rem;
+    align-self: start;
+}
+
+.section-content {
+    grid-column: 4 / 13;
+}
+
+#main {
+    scroll-margin-top: 8.5rem;
+}
+
+@media (max-width: 768px) {
+    .section-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        padding: 3rem 0;
+        border-bottom: 1px solid var(--hairline);
+    }
+    .section-grid:last-of-type {
+        border-bottom: none;
+    }
+    .section-label, .section-content {
+        grid-column: 1 / -1;
+    }
+    .section-label {
+        position: relative;
+        top: 0;
+    }
+}
+
+/* First section on an inner page: no rule above it. */
+.section-grid--opening {
+    border-top: none;
+    padding-top: 2rem;
+}
+
+.page-title {
+    font-size: clamp(2.5rem, 4vw, 4rem);
+    font-family: var(--font-serif);
+    margin-bottom: 0;
+}
+
+.section-label h2 {
+    font-size: 1.5rem;
+    letter-spacing: -0.02em;
+}
+
+.section-meta {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+}
+
+.section-content {
+    max-width: 75ch;
+    /* CV text carries DOIs, accession numbers and long binomials. Without
+       this one of them eventually overflows the column instead of breaking. */
+    overflow-wrap: break-word;
+}
+
+.section-content p, .section-content li {
+    font-size: 1.125rem;
+    margin-bottom: 1.5rem;
+    text-wrap: pretty;
+}
+
+/* Lists */
+ul.work-list, ul.paper-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+ul.work-list li {
+    font-size: 1.125rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--hairline);
+}
+ul.work-list li:last-child {
+    border-bottom: none;
+}
+
+ul.paper-list li {
+    margin-bottom: 2.5rem;
+}
+ul.paper-list li:last-child {
+    margin-bottom: 1.5rem;
+}
+
+ul.paper-list li h3, .pub h3, .talk-title {
+    font-size: 1.25rem;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    font-family: var(--font-sans);
+    font-weight: 600;
+}
+ul.paper-list li h3 a { border-bottom: 1px solid var(--hairline); }
+
+/* Muted with colour, not opacity: opacity on the parent would cap how
+   strongly the author name inside can be picked out. */
+ul.paper-list li p.citation, .pub .authors, .pub .venue, .talk .authors, .talk .venue {
+    font-size: 1rem;
+    color: var(--text-muted);
+    margin: 0;
+    font-family: var(--font-serif);
+}
+
+/* Home page, Selected papers: three tiers in one line. The co-authors recede
+   to 60% (5.16:1, still AA), the journal holds full strength, and Mohit's name
+   takes the accent colour below. */
+/* One treatment on all three pages that list Mohit's work -- the home page
+   selected papers, the publications, and the conference talks: the co-authors
+   recede, Mohit's name takes the accent, and the venue takes the same accent.
+
+   50% measures 3.67:1, below the 4.5:1 AA floor the rest of the site holds.
+   Mohit asked for it twice; raise this back to 57% to be compliant again. */
+ul.paper-list li p.citation,
+.talk .authors,
+.pub .authors {
+    color: color-mix(in srgb, var(--text-color) 50%, var(--bg-color));
+}
+ul.paper-list li .cite-venue,
+.talk .venue,
+.pub .venue {
+    color: var(--header-color);
+    font-weight: 600;
+}
+/* The DOI chip sits inside .venue, so it would inherit that 600. It is a label,
+   not emphasis, and it keeps its own weight. */
+.pub .venue .doi {
+    font-weight: normal;
+}
+
+/* Mohit's own name in an author list. */
+.citation strong, .authors strong {
+    color: var(--header-color);
+    font-weight: 600;
+    font-style: normal;
+}
+/* The underline marks the name apart from the venue, which shares its colour.
+   Not on the publications page: each entry there is one big link whose title is
+   already underlined, so a second underline inside it would read as a separate
+   link that does not work. */
+ul.paper-list li .citation strong,
+.talk .authors strong {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+}
+
+.tail-link {
+    display: inline-block;
+    margin-top: 1rem;
+    font-weight: 500;
+    font-size: 1.125rem;
+    border-bottom: 1px solid var(--text-color);
+    padding-bottom: 2px;
+}
+
+/* ── Experience timeline ────────────────────────────────────
+   The date rail gains an axis on its left edge. Two stacked lines:
+   a faint full-length track, and a drawn overlay whose height is
+   tied to how far down the page you have scrolled. The overlay is
+   native scroll-driven CSS, so there is no script and no listener;
+   where the browser lacks it, the axis is simply drawn in full. */
+.timeline {
+    position: relative;
+    padding-left: 1.75rem;
+}
+.timeline::before, .timeline::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 0.75rem;
+    bottom: 0.75rem;
+    width: 2px;
+    border-radius: 1px;
+}
+.timeline::before { background: var(--hairline); }
+.timeline::after {
+    background: var(--header-color);
+    opacity: 0.5;
+    transform-origin: top;
+}
+
+@supports (animation-timeline: scroll()) {
+    @media (prefers-reduced-motion: no-preference) {
+        .timeline::after {
+            animation-name: draw-axis;
+            animation-duration: auto;
+            animation-timing-function: linear;
+            animation-fill-mode: both;
+            animation-timeline: scroll(root block);
+        }
+    }
+}
+
+@keyframes draw-axis {
+    from { transform: scaleY(0); }
+    to   { transform: scaleY(1); }
+}
+
+/* Nodes sit on the axis. Two weights only: an era starts a group,
+   a role is one entry inside it. */
+.timeline .place > h3,
+.timeline .role { position: relative; }
+
+.timeline .place > h3::before,
+.timeline .role::before {
+    content: '';
+    position: absolute;
+    left: -1.75rem;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    box-shadow: 0 0 0 4px var(--bg-color);
+    box-sizing: border-box;
+}
+.timeline .place > h3::before {
+    top: 0.6em;
+    background: var(--header-color);
+}
+.timeline .role::before {
+    top: 0.55rem;
+    background: var(--bg-color);
+    border: 2px solid var(--rule-color);
+    transition: transform 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+.timeline .role:hover::before,
+.timeline .role:focus-within::before {
+    border-color: var(--header-color);
+    transform: scale(1.25);
+}
+/* The appointment still running fills its own node, so the hanging
+   dot the other pages use is redundant here. */
+.timeline .role:has(> .date--current)::before {
+    background: var(--accent-orange);
+    border-color: var(--accent-orange);
+}
+.timeline .date--current::before { display: none; }
+
+/* Common UI Elements */
+.place {
+    margin-bottom: 2.5rem;
+}
+.place h3 {
+    font-size: 1.5rem;
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    color: var(--header-color);
+    letter-spacing: -0.01em;
+}
+
+.role {
+    margin-bottom: 1.75rem;
+}
+.role:last-child {
+    margin-bottom: 0;
+}
+/* Entry bullets are a tight group, not body paragraphs. */
+.role ul {
+    margin: 0.4rem 0 0;
+    padding-left: 1.1rem;
+}
+.role li {
+    font-size: 1rem;
+    margin-bottom: 0.3rem;
+}
+.role li:last-child { margin-bottom: 0; }
+
+/* Scoped to .section-content: the generic paragraph rule there is more
+   specific than a bare class and would otherwise reinstate 1.5rem. */
+.section-content .role-head {
+    font-weight: 600;
+    font-size: 1.25rem;
+    font-family: var(--font-sans);
+    margin-bottom: 0.25rem;
+    line-height: 1.35;
+}
+.section-content .pi,
+.section-content .subtitle {
+    font-style: italic;
+    color: var(--text-muted);
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+/* ── Date rail ──────────────────────────────────────────────
+   Every dated entry puts its date in a fixed left column and the
+   entry body in the right one. The rail replaces the old timeline
+   spine: the dates are the chronology. Entries without a date
+   (:has fails) keep normal flow, so the parser can drop a date
+   without breaking the layout. */
+:is(.role, .talk, .pub, .edu, .listing li, .paper-list li):has(> .date) {
+    display: grid;
+    /* 12rem holds the longest date the CV produces ("Jan 2026 – May 2026") on
+       one line at body size. */
+    grid-template-columns: 12rem minmax(0, 1fr);
+    column-gap: 1.5rem;
+    align-items: baseline;
+}
+:is(.role, .talk, .pub, .edu, .listing li, .paper-list li) > .date {
+    grid-column: 1;
+    grid-row: 1;
+}
+:is(.role, .talk, .pub, .edu, .listing li, .paper-list li) > *:not(.date) {
+    grid-column: 2;
+}
+
+.date {
+    /* The site's own sans, not monospace. Tabular figures keep the digits in a
+       column down the rail, which is the only thing monospace was doing here. */
+    font-family: var(--font-sans);
+    font-variant-numeric: tabular-nums;
+    /* Same size and weight as body text. A date is a fact here, not a caption. */
+    font-size: 1.125rem;
+    font-weight: normal;
+    line-height: 1.5;
+    /* The rail column is a fixed 10rem. Dates come from the CV, so one of them
+       will eventually be longer than that: wrap it instead of letting it run
+       out over the entry text. */
+    overflow-wrap: anywhere;
+    transition: color 0.15s var(--ease);
+}
+
+/* Hovering or tabbing into an entry tints its date. */
+:is(.role, .talk, .pub, .edu, .listing li, .paper-list li):hover > .date,
+:is(.role, .talk, .pub, .edu, .listing li, .paper-list li):focus-within > .date {
+    color: var(--header-color);
+}
+
+/* The appointment that is still running. */
+.date--current {
+    position: relative;
+    opacity: 1;
+    color: var(--header-color);
+    font-weight: 600;
+}
+/* The dot hangs outside the rail so the date text stays aligned
+   with every other date in the column. */
+.date--current::before {
+    content: '';
+    position: absolute;
+    left: -0.85rem;
+    top: 0.55em;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-orange);
+}
+
+.edu { margin-bottom:1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--hairline); }
+.edu:last-child { border-bottom: none; }
+.edu-degree { font-weight: 600; font-size: 1.25rem; font-family: var(--font-sans); }
+.edu-place { opacity: 0.8; display:block; }
+
+dl.skills dt { font-weight:600; margin-top:1.5rem; color:var(--header-color); text-transform:uppercase; font-size:0.85em; letter-spacing:0.05em;}
+dl.skills dd { margin:0 0 1rem 0; font-size: 1.125rem;}
+
+.pub, .talk { margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--hairline); }
+.pub:last-child, .talk:last-child { border-bottom: none; }
+
+/* A publication is one link end to end. The global link-hover colour is
+   cancelled so only the title and the DOI chip react. */
+a.pub { color: inherit; }
+a.pub:hover, a.pub:focus-visible { color: inherit; }
+/* The title is underlined at rest, so the card reads as clickable without
+   needing a hover the touch reader never gets. */
+a.pub h3 {
+    text-decoration: underline;
+    text-decoration-color: var(--hairline);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 4px;
+    transition: color 0.15s var(--ease), text-decoration-color 0.15s var(--ease);
+}
+a.pub:hover h3, a.pub:focus-visible h3 {
+    color: var(--header-color);
+    text-decoration-color: currentColor;
+}
+a.pub:hover .doi, a.pub:focus-visible .doi {
+    color: var(--bg-color);
+    background: var(--header-color);
+    border-color: var(--header-color);
+}
+a.pub:focus-visible { outline-offset: 8px; }
+
+.doi {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25em;
+    font-size: 0.75em;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border: 1px solid currentColor;
+    padding: 1px 5px;
+    border-radius: 3px;
+    margin-left: 0.5rem;
+    font-family: var(--font-sans);
+    white-space: nowrap;
+    transition: color 0.15s var(--ease), background 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+.year-group { margin-bottom: 3rem; }
+.year { font-size: 2rem; border-bottom: 2px solid var(--rule-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+
+.download-btn {
+    appearance: none;
+    background: var(--header-color);
+    color: var(--bg-color);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: var(--font-sans);
+    transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease), background 0.2s var(--ease);
+    display: inline-flex;
+    align-items: center;
+}
+/* The label has to stay readable: the global link-hover colour would
+   otherwise paint the text the same orange as the hover background. */
+.download-btn:hover, .download-btn:focus-visible {
+    color: var(--bg-color);
+    background: color-mix(in srgb, var(--header-color) 85%, var(--accent-orange));
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--text-color) 18%, transparent);
+}
+.download-btn:active {
+    transform: translateY(0);
+    transition-duration: 80ms;
+}
+
+.listing { list-style: none; padding: 0; margin: 0; }
+.listing li {
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--hairline);
+    font-size: 1.125rem;
+    font-family: var(--font-sans);
+    font-weight: 500;
+    margin-bottom: 0;
+}
+.listing li:last-child { border-bottom: none; }
+
+/* Footer */
+.site-footer {
+    border-top: 3px solid var(--rule-color);
+    padding: 2rem 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .site-footer {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+}
+
+.contact p { margin: 0; }
+.footer-cta {
+    font-size: 1.125rem;
+    font-family: var(--font-serif);
+}
+.footer-cta .email {
+    border-bottom: 1px solid var(--hairline);
+    padding-bottom: 1px;
+}
+.footer-meta { opacity: 0.7; margin-top: 0.25rem !important; }
+
+.footer-links {
+    display: flex;
+    gap: 1.5rem;
+}
+.footer-links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.print-only { display: none; }
+
+/* Print overrides */
+@media print {
+    body { font-size: 11pt; }
+    .site-header, .site-footer, .hero-image, nav, .skip-link, .print-hint { display: none !important; }
+    .section-grid { display: block; border: none; padding: 0; margin-bottom: 2rem; }
+    .section-label { position: static; margin-bottom: 1rem; }
+    .print-only { display: block; }
+    .cv-letterhead { margin-bottom: 3rem; border-bottom: 2px solid black; padding-bottom: 1rem; }
+    .cv-letterhead h2 { font-size: 2rem; }
+    .container { padding: 0; }
+    .role, .edu, .pub, .talk, .listing li { break-inside: avoid; }
+    .timeline { padding-left: 0; }
+    .timeline::before, .timeline::after,
+    .timeline .place > h3::before, .timeline .role::before { display: none; }
+}
+
+/* ──────────── Touch and mobile ───────────── */
+@media (pointer: coarse) {
+    nav a, .utility a, .theme-toggle, .site-footer a {
+        min-height: 44px;
+        min-width: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .footer-links a { min-width: 0; }
+}
+
+@media (max-width: 768px) {
+    /* The nav scrolls sideways here. The fade says so. */
+    nav {
+        margin-bottom: 0;
+        mask-image: linear-gradient(to right, #000 88%, transparent);
+    }
+    /* The rail costs too much width on a phone: the date goes above
+       the entry instead. Explicit grid-row on .date keeps it first. */
+    :is(.role, .talk, .pub, .edu, .listing li, .paper-list li):has(> .date) {
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: 0.25rem;
+    }
+    :is(.role, .talk, .pub, .edu, .listing li, .paper-list li) > *:not(.date) {
+        grid-column: 1;
+    }
+}
