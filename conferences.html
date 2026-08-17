@@ -36,6 +36,9 @@
       document.documentElement.setAttribute('data-theme', 'light');
     }
   } catch (e) {}
+  // The Hobbies map hides its own contents only while a script is there to
+  // reveal them again. Harmless on every other page.
+  document.documentElement.classList.add('js');
 </script>
 <noscript><style>.theme-toggle { display: none; }</style></noscript>
 </head>
@@ -73,6 +76,7 @@
       <li><a href="/teaching.html">Teaching &amp; Service</a></li>
       <li><a href="/conferences.html" aria-current="page">Conferences &amp; Awards</a></li>
       <li><a href="/cv.html">CV</a></li>
+      <li><a href="/hobbies.html">Hobbies</a></li>
       </ul>
     </nav>
   </header>

@@ -847,6 +847,330 @@ a.pub:focus-visible { outline-offset: 8px; }
 .print-only { display: none; }
 
 /* Print overrides */
+
+
+/* ═══ Hobbies page ══════════════════════════════════════════════════ */
+
+/* ── The atlas ──────────────────────────────────────────────────────
+   One landmass, no borders. Countries are separate paths in the
+   source data, so each one takes a stroke in its own fill colour;
+   without it the shared edges show as pale seams where the
+   antialiasing of two abutting polygons fails to meet. */
+
+.atlas {
+    /* Both opaque, deliberately. A translucent land colour looks identical
+       until two countries share a coastline: the overlapping edges double up
+       and draw exactly the borders this map is supposed to be free of. */
+    --map-bg: color-mix(in srgb, var(--header-color) 4%, var(--bg-color));
+    --land:   color-mix(in srgb, var(--header-color) 16%, var(--bg-color));
+    position: relative;
+    margin: 0 0 4rem;
+    border-radius: 4px;
+    background: var(--map-bg);
+}
+
+.atlas svg {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.atlas .land path {
+    fill: var(--land);
+    stroke: var(--land);
+    stroke-width: 0.6;
+}
+
+/* The route. One line threading nine anchors, bowed north like a flight
+   path, drawn leg by leg as the map arrives. */
+.atlas .route {
+    fill: none;
+    stroke: var(--accent-orange);
+    stroke-width: 1.1;
+    stroke-linecap: round;
+    opacity: 0.4;
+    stroke-dasharray: 1 1;
+    stroke-dashoffset: 1;
+}
+
+.atlas.is-in .route { stroke-dashoffset: 0; }
+
+@keyframes route-draw {
+    from { stroke-dashoffset: 1; }
+    to   { stroke-dashoffset: 0; }
+}
+
+/* The photograph. It appears beside the pin on hover, tap or focus, and it
+   is the payoff of the whole map: proof that somebody stood there. */
+.thumb-pos { pointer-events: none; }
+
+.thumb {
+    opacity: 0;
+    /* Translate only. A scale would need a transform-origin, and the origin of
+       a group is not somewhere you want to reason about at four in the
+       morning. */
+    transform: translateY(6px);
+    transition: opacity 0.28s var(--ease), transform 0.28s var(--ease);
+    filter: drop-shadow(0 6px 10px color-mix(in srgb, var(--text-color) 26%, transparent));
+}
+.thumb.is-on { opacity: 1; transform: translateY(0); }
+
+.thumb-frame {
+    fill: none;
+    stroke: var(--map-bg);
+    stroke-width: 3;
+}
+
+/* The name of a place that has no permanent label, shown while it is
+   hovered, tapped or focused. */
+.hovername {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 600;
+    fill: var(--accent-orange);
+    paint-order: stroke;
+    stroke: var(--map-bg);
+    stroke-width: 3px;
+    stroke-linejoin: round;
+    pointer-events: none;
+}
+
+
+/* ── Pins ───────────────────────────────────────────────────────────
+   A teardrop with its point on the coordinate it marks. The named places
+   are drawn larger than the rest, so a region reads as busy without every
+   town shouting its name. */
+
+.pin-at { cursor: pointer; }
+.pin-at .hit { fill: transparent; }
+
+.drop {
+    fill: var(--accent-orange);
+    stroke: var(--map-bg);
+    stroke-width: 1;
+    /* The tip is the anchor, so growing on hover lifts the head and leaves
+       the point exactly where the place is. */
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    /* --s is the resting size. It lives in one declaration so the hover state
+       can multiply it instead of replacing it. */
+    transform: scale(var(--s, 1));
+    transition: transform 0.22s var(--ease), fill 0.22s var(--ease),
+                opacity 0.22s var(--ease);
+}
+
+.pin-at:not(.is-named) .drop { opacity: 0.72; }
+.pin-at:not(.is-named):hover .drop,
+.pin-at:not(.is-named).is-on .drop { opacity: 1; }
+
+.pin-at .halo {
+    fill: none;
+    stroke: var(--accent-orange);
+    stroke-width: 1;
+    opacity: 0;
+}
+
+/* Leaders live in their own layer under the pins, so this cannot be
+   scoped to .pin-at. */
+.atlas .leader {
+    fill: none;
+    stroke: color-mix(in srgb, var(--text-color) 38%, transparent);
+    stroke-width: 0.7;
+}
+
+/* paint-order draws the stroke first, so each label keeps a halo of
+   map colour and stays legible where it crosses land. */
+.pin-at .lbl {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.005em;
+    fill: var(--text-color);
+    paint-order: stroke;
+    stroke: var(--map-bg);
+    stroke-width: 3px;
+    stroke-linejoin: round;
+    transition: fill 0.22s var(--ease);
+}
+
+.pin-at:hover .drop,
+.pin-at:focus-visible .drop,
+.pin-at.is-on .drop {
+    transform: scale(calc(var(--s, 1) * 1.35));
+    fill: color-mix(in srgb, var(--accent-orange) 82%, var(--text-color));
+}
+
+.pin-at:hover .lbl,
+.pin-at:focus-visible .lbl,
+.pin-at.is-on .lbl { fill: var(--accent-orange); }
+
+.pin-at:focus { outline: none; }
+.pin-at:focus-visible .hit {
+    fill: none;
+    stroke: var(--accent-orange);
+    stroke-width: 2;
+}
+
+
+/* ── The one authored moment ────────────────────────────────────────
+   The pins fall onto the map. The named places land first and slowly, one
+   at a time, so each label can be read as it arrives; the rest come in
+   behind them and fill the map. Each one leaves a ripple where its point
+   hits.
+
+   .js hides them only while a script is there to drop them again, so with
+   JavaScript blocked the map is complete and still. */
+
+.js .atlas .land { opacity: 0; }
+.js .atlas .pin  { opacity: 0; }
+
+.atlas.is-in .land {
+    opacity: 1;
+    transition: opacity 0.8s var(--ease);
+}
+
+.atlas.is-in .pin { animation: none; }
+
+@keyframes pin-fall {
+    0%   { transform: translateY(-58px); opacity: 0; }
+    24%  { opacity: 1; }
+    58%  { transform: translateY(0); }
+    72%  { transform: translateY(-5px); }
+    86%  { transform: translateY(0); }
+    93%  { transform: translateY(-1.5px); }
+    100% { transform: translateY(0); opacity: 1; }
+}
+
+/* Timed to the landing, not to the start of the fall. */
+.atlas.is-in .pin .halo {
+    animation: none;
+}
+
+@keyframes pin-ping {
+    from { r: 2;  opacity: 0.75; }
+    to   { r: 15; opacity: 0; }
+}
+
+/* Labels and leaders wait for their own pin to settle. */
+.js .atlas .lbl, .js .atlas .leader { opacity: 0; }
+.atlas.is-in .lbl {
+    opacity: 1;
+    transition: opacity 0.45s var(--ease) calc(var(--t) + 0.6s);
+}
+.atlas.is-in .leader {
+    opacity: 0.9;
+    transition: opacity 0.45s var(--ease) var(--t);
+}
+
+/* The site-wide reduced-motion rule collapses durations but leaves delays
+   alone, which would still deal the pins out over ten seconds. Zero them so
+   the finished map simply appears. */
+@media (prefers-reduced-motion: reduce) {
+    .atlas .pin, .atlas .lbl, .atlas .leader, .atlas .land, .atlas .route,
+    .atlas .pin .halo {
+        transition-delay: 0s !important;
+        animation-delay: 0s !important;
+    }
+}
+
+
+/* ── The shelf ──────────────────────────────────────────────────────
+   Covers are the content, so they carry the page. Each one is tilted
+   on its pedestal at rest and turns to face the reader on hover. */
+
+.section-content--wide { max-width: none; }
+
+.shelf {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 3.5rem 2.5rem;
+    padding-top: 0.5rem;
+    perspective: 1400px;
+}
+
+.book { display: block; }
+
+.book-cover {
+    position: relative;
+    aspect-ratio: 2 / 3;
+    border-radius: 2px 5px 5px 2px;
+    background: color-mix(in srgb, var(--text-color) 8%, var(--bg-color));
+    transform: rotateX(14deg) rotateY(-13deg);
+    transform-style: preserve-3d;
+    box-shadow: -10px 18px 26px color-mix(in srgb, var(--text-color) 16%, transparent);
+    transition: transform 0.55s var(--ease), box-shadow 0.55s var(--ease);
+}
+
+/* The page block along the fore edge. Drawn, not photographed, so it
+   matches whatever cover sits next to it. */
+.book-cover::after {
+    content: '';
+    position: absolute;
+    inset: 2px 0 2px auto;
+    left: -5px;
+    width: 5px;
+    border-radius: 2px 0 0 2px;
+    background: linear-gradient(to right,
+        color-mix(in srgb, var(--text-color) 22%, var(--bg-color)),
+        color-mix(in srgb, var(--text-color) 6%, var(--bg-color)));
+    transform: translateZ(-3px);
+}
+
+.book-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 2px 5px 5px 2px;
+}
+
+.book:hover .book-cover,
+.book:focus-visible .book-cover {
+    transform: rotateX(0) rotateY(0) translateY(-8px) scale(1.03);
+    box-shadow: 0 22px 40px color-mix(in srgb, var(--text-color) 22%, transparent);
+}
+
+.book:focus-visible { outline: none; }
+.book:focus-visible .book-cover {
+    outline: 2px solid var(--accent-orange);
+    outline-offset: 6px;
+}
+
+.book-meta { margin-top: 1.75rem; }
+
+.book-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    line-height: 1.25;
+    margin: 0;
+    color: var(--header-color);
+    letter-spacing: -0.01em;
+}
+
+.book-author {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin: 0.15rem 0 0;
+}
+
+.book:hover .book-title { color: var(--accent-orange); }
+
+
+/* ── Narrow screens ─────────────────────────────────────────────────
+   The map keeps its dots and its readout, but drops the labels: at
+   phone width an 11px label is 4px, which is decoration rather than
+   information. Tapping a dot still names the place it marks. */
+
+@media (max-width: 767px) {
+    .atlas .lbl, .atlas .leader { display: none; }
+    /* The teardrops are drawn at world scale. On a phone the map is a third
+       of the width, so they grow back to something a thumb can find. */
+    .atlas { --s: 1.7; }
+    .shelf { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 2.5rem 1.5rem; }
+    .book-meta { margin-top: 1.25rem; }
+}
+
+
 @media print {
     body { font-size: 11pt; }
     .site-header, .site-footer, .hero-image, nav, .skip-link, .print-hint { display: none !important; }
