@@ -893,7 +893,7 @@ a.pub:focus-visible { outline-offset: 8px; }
     stroke-dashoffset: 1;
 }
 
-.atlas.is-in .route { stroke-dashoffset: 0; }
+.atlas.is-in .route { animation: route-draw 0.9s var(--ease) var(--t) both; }
 
 @keyframes route-draw {
     from { stroke-dashoffset: 1; }
@@ -1029,7 +1029,7 @@ a.pub:focus-visible { outline-offset: 8px; }
     transition: opacity 0.8s var(--ease);
 }
 
-.atlas.is-in .pin { animation: none; }
+.atlas.is-in .pin { animation: pin-fall 0.9s var(--ease) var(--t) both; }
 
 @keyframes pin-fall {
     0%   { transform: translateY(-58px); opacity: 0; }
@@ -1043,7 +1043,7 @@ a.pub:focus-visible { outline-offset: 8px; }
 
 /* Timed to the landing, not to the start of the fall. */
 .atlas.is-in .pin .halo {
-    animation: none;
+    animation: pin-ping 0.75s var(--ease) calc(var(--t) + 0.52s) both;
 }
 
 @keyframes pin-ping {
@@ -1082,10 +1082,12 @@ a.pub:focus-visible { outline-offset: 8px; }
 
 .shelf {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 3.5rem 2.5rem;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem 0.5rem;
     padding-top: 0.5rem;
     perspective: 1400px;
+    margin-right: -2rem;
+    margin-left: -1rem;
 }
 
 .book { display: block; }
@@ -1136,24 +1138,33 @@ a.pub:focus-visible { outline-offset: 8px; }
     outline-offset: 6px;
 }
 
-.book-meta { margin-top: 1.75rem; }
+.book-meta {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
 
 .book-title {
-    font-size: 1.05rem;
+    font-size: 0.6rem;
     font-weight: 600;
-    line-height: 1.25;
+    line-height: 1.2;
     margin: 0;
     color: var(--header-color);
     letter-spacing: -0.01em;
 }
 
 .book-author {
-    font-size: 0.9rem;
+    font-size: 0.5rem;
     color: var(--text-muted);
     margin: 0.15rem 0 0;
 }
 
-.book:hover .book-title { color: var(--accent-orange); }
 
 
 /* ── Narrow screens ─────────────────────────────────────────────────
@@ -1166,8 +1177,30 @@ a.pub:focus-visible { outline-offset: 8px; }
     /* The teardrops are drawn at world scale. On a phone the map is a third
        of the width, so they grow back to something a thumb can find. */
     .atlas { --s: 1.7; }
-    .shelf { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 2.5rem 1.5rem; }
+    .shelf { grid-template-columns: repeat(2, 1fr); gap: 1.5rem 1rem; }
     .book-meta { margin-top: 1.25rem; }
+}
+
+/* 3D Hover Physics for Books (Progressive Enhancement) */
+@media (hover: hover) and (pointer: fine) {
+    .shelf {
+        perspective: 2000px;
+    }
+    .book {
+        transition: filter 0.4s ease;
+        will-change: filter;
+    }
+    .shelf:has(.book-cover:hover) .book:not(:has(.book-cover:hover)) {
+        filter: blur(4px) brightness(0.8);
+    }
+    .book-cover {
+        transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
+        transform-style: preserve-3d;
+        will-change: transform, box-shadow;
+    }
+    .book:hover .book-cover {
+        z-index: 10;
+    }
 }
 
 

@@ -283,3 +283,44 @@
     atlas.classList.add("is-in");
   }
 })();
+
+// 3D Hover Physics for Books (Optimized for performance)
+document.addEventListener("DOMContentLoaded", () => {
+  // Graceful degradation: Only run JS physics on devices that support hover
+  if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+
+  const physicsBooks = document.querySelectorAll('.shelf .book-cover');
+  physicsBooks.forEach(cover => {
+    let rafId = null;
+    let isHovering = false;
+    let targetX = 0, targetY = 0;
+    
+    function updatePhysics() {
+      if (!isHovering) return;
+      const rect = cover.getBoundingClientRect();
+      const xPct = (targetX / rect.width) - 0.5;
+      const yPct = (targetY / rect.height) - 0.5;
+      
+      cover.style.transform = `rotateX(${-yPct * 25}deg) rotateY(${xPct * 25}deg) translateY(-10px) scale(1.05)`;
+      cover.style.boxShadow = `${-xPct * 40}px ${yPct * 40 + 20}px 40px rgba(0,0,0,0.5)`;
+      
+      rafId = null;
+    }
+
+    cover.addEventListener('mousemove', (e) => {
+      isHovering = true;
+      const rect = cover.getBoundingClientRect();
+      targetX = e.clientX - rect.left;
+      targetY = e.clientY - rect.top;
+      
+      if (!rafId) rafId = requestAnimationFrame(updatePhysics);
+    });
+    
+    cover.addEventListener('mouseleave', () => {
+      isHovering = false;
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      cover.style.transform = '';
+      cover.style.boxShadow = '';
+    });
+  });
+});
